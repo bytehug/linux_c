@@ -5,27 +5,35 @@
 
 #define ERROR_NONE  (0)
 #define MAX_LEN     (10000)
+#define MAX_CNT     (1)
 
-static inline bool is_num(char c) {
+static inline bool is_num(char c)
+{
     if (c < '0' || c > '9') {
         return false;
     }
+
     return true;
 }
 
-int main(void) {
-    char input[MAX_LEN+1];
+int32_t main(void)
+{
+    char input[MAX_LEN + 1];
     bool num_jdg;
     int32_t i, cnt_e, cnt_dot;
 
     memset(input, 0, sizeof(input));
-    /* ä¸ç”¨scanfä¿è¯ç©ºæ ¼è¾“å…¥ï¼Œä½¿ç”¨fget */
+    /* Ê¹ÓÃfgetÊäÈë */
     while (fgets(input, MAX_LEN, stdin) != NULL) {
-        cnt_e   = 0;
-        cnt_dot = 0;
+        cnt_e   = 0;    /* ¼ÇÂ¼³öÏÖµÄe¸öÊı */
+        cnt_dot = 0;    /* ¼ÇÂ¼³öÏÖµÄ.¸öÊı */
         num_jdg = true;
-        /* fgetä¼šæŠŠç»“å°¾çš„å›è½¦ç¬¦è¯»å…¥ï¼Œä½œä¸ºç»“æŸæ ‡å¿— */
-        for (i = 0; (input[i] != '\n' && input[i] != '\0') && i < MAX_LEN; i++) {
+        /* fget»á°Ñ½áÎ²µÄ»Ø³µ·û¶ÁÈë×÷Îª½áÊø±êÖ¾ */
+        for (i = 0; i < MAX_LEN; i++) {
+            if ((input[i] == '\n' || input[i] == '\0')) {
+                break;
+            }
+
             switch (input[i]) {
             case '0':
             case '1':
@@ -40,20 +48,23 @@ int main(void) {
                 break;
             case '.':
                 cnt_dot++;
-                if (cnt_dot > 1) {
+                if (cnt_dot > MAX_CNT) {
                     num_jdg = false;
                     goto jdg_done;
                 }
-                /* .å‡ºç°åœ¨å¼€å¤´éœ€è¦å¦è¡Œå¤„ç†ï¼Œå¦åˆ™ä¸‹æ ‡å¯èƒ½è¶Šç•Œ */
+
+                if (!is_num(input[i + 1])) {
+                    num_jdg = false;
+                    goto jdg_done;
+                }
+
+                /* .³öÏÖÔÚ¿ªÍ·ĞèÒªÁíĞĞ´¦Àí£¬ÒÔ·ÀÏÂ±êÔ½½ç */
                 if (i == 0) {
-                    if (!is_num(input[i+1])) {
-                        num_jdg = false;
-                        goto jdg_done;
-                    }
                     break;
                 }
-                /* .å‰åå¿…æœ‰æ•°å­—ï¼Œä¸”å‰é¢ä¸åº”å‡ºç°e */
-                if (cnt_e != 0 || (!is_num(input[i-1]) && !is_num(input[i+1]))) {
+
+                /* .Ç°ºó±ØÓĞÊı×Ö£¬ÇÒÇ°Ãæ²»Ó¦³öÏÖe */
+                if (cnt_e != 0 || (!is_num(input[i - 1]) && !is_num(input[i + 1]))) {
                     num_jdg = false;
                     goto jdg_done;
                 }
@@ -62,7 +73,7 @@ int main(void) {
             case '-':
                 if (i == 0) {
                     break;
-                } else if (input[i-1] == 'e') {
+                } else if (input[i - 1] == 'e') {
                     break;
                 } else {
                     num_jdg = false;
@@ -75,28 +86,29 @@ int main(void) {
                     goto jdg_done;
                 }
 
-                /* æ— éœ€è€ƒè™‘.eï¼Œè¯¥æƒ…å†µèƒ½å¤Ÿè¢«.åˆ¤æ–­è§„åˆ™è§„é¿ */
-                if ((!is_num(input[i-1]) && input[i-1] != '.') || \
-                    ((!is_num(input[i+1]) && input[i+1] != '+' && input[i+1] != '-'))) {
+                /* .eÇé¿öÄÜ¹»±».ÅĞ¶Ï¹æÔò¹æ±Ü, eÇ°¿ÉÄÜÎªÊı¡¢µã, eºó¿ÉÄÜÎªÊı»òÕı¸ººÅ */
+                if ((!is_num(input[i - 1]) && input[i - 1] != '.') \
+                        || ((!is_num(input[i + 1]) && input[i + 1] != '+' \
+                        && input[i + 1] != '-'))) {
                     num_jdg = false;
                     goto jdg_done;
                 }
                 break;
-            default: 
+            default:
                 num_jdg = false;
                 goto jdg_done;
                 break;
-            }
+            }   /* END OF SWITCH */
 
-            if (cnt_e > 1 || cnt_dot > 1) {
+            if (cnt_e > MAX_CNT || cnt_dot > MAX_CNT) {
                 num_jdg = false;
                 goto jdg_done;
             }
-        }
+        }   /* END OF FOR */
 
 jdg_done:
         printf("%d\n", num_jdg);
-    }
+    }   /* END OF WHILE */
 
     return ERROR_NONE;
 }
