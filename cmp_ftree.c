@@ -15,9 +15,9 @@
 #define MAX_LEN     (256)
 #define MAX_PATH    (4096)
 #define BUFF_SIZE   (1024)
-#define D_SMALL     (0)         /* è½»å¾®å·®å¼‚ */
-#define D_GREAT     (1)         /* æœ¬è´¨å·®å¼‚ */
-#define D_NONE      (2)         /* æ— å¯¹åº” */
+#define D_SMALL     (0)         /* ÇáÎ¢²îÒì */
+#define D_GREAT     (1)         /* ±¾ÖÊ²îÒì */
+#define D_NONE      (2)         /* ÎÞ¶ÔÓ¦ */
 
 #define CHK_RET(ret, fmt, args...) do { \
     if (ret != 0) { \
@@ -27,8 +27,8 @@
 } while (0)
 
 typedef enum cmp_op {
-    TREE = 0,   /* å…¨éƒ¨è¾“å‡º */
-    DIFF = 1,   /* å·®å¼‚è¾“å‡º */
+    TREE = 0,   /* È«²¿Êä³ö */
+    DIFF = 1,   /* ²îÒìÊä³ö */
     OMAX = 2,
 } op_e;
 
@@ -96,7 +96,7 @@ static int32_t get_short_name(char *fname, char *fpath) {
     return ERROR_NONE;
 }
 
-static int32_t compare_files(fnode_t *fnode)        /* æ–‡ä»¶ååŒ…æ‹¬è·¯å¾„ */
+static int32_t compare_files(fnode_t *fnode)        /* ÎÄ¼þÃû°üÀ¨Â·¾¶ */
 {
     int32_t ret, rv;
     char *f2_path;
@@ -110,20 +110,20 @@ static int32_t compare_files(fnode_t *fnode)        /* æ–‡ä»¶ååŒ…æ‹¬è·¯å¾„ */
 
     memset(&st1, 0, sizeof(struct stat));
     memset(&st2, 0, sizeof(struct stat));
-    ret = lstat(fnode->name, &st1);                 /* lstatèƒ½è¯»å‡ºé“¾æŽ¥æ–‡ä»¶è‡ªèº«å±žæ€§ */
+    ret = lstat(fnode->name, &st1);                 /* lstatÄÜ¶Á³öÁ´½ÓÎÄ¼þ×ÔÉíÊôÐÔ */
     if (ret != ERROR_NONE) {
         printf("get lstat fail, node name:%s\n", fnode->name);
         return ERROR_FAIL;
     }
     ret = lstat(f2_path, &st2);
     if (ret != ERROR_NONE) {
-        /* æ‰“ä¸å¼€è®¤ä¸ºæ— å¯¹åº” */
+        /* ´ò²»¿ªÈÏÎªÎÞ¶ÔÓ¦ */
         fnode->result = D_NONE;
         return ERROR_NONE;
     }
-    /* è¿™è¾¹è€ƒè™‘ä¸åŒç±»åž‹çš„æ–‡ä»¶æ˜¯å¦åŒºåˆ†å¤„ç† */
+    /* Õâ±ß¿¼ÂÇ²»Í¬ÀàÐÍµÄÎÄ¼þÊÇ·ñÇø·Ö´¦Àí */
     if ((st1.st_mode & S_IFMT) == S_IFREG) {
-        /* normal fileï¼Œè‡³å°‘éƒ½ä¼šæœ‰å±žæ€§å·®å¼‚ï¼Œè¦æ±‚æ¯”è¾ƒæ‰€æœ‰å±žæ€§ï¼Œæ•…å½¢å¼ä¸Šæ¯”è¾ƒä¸‹ */
+        /* normal file£¬ÖÁÉÙ¶¼»áÓÐÊôÐÔ²îÒì£¬ÒªÇó±È½ÏËùÓÐÊôÐÔ£¬¹ÊÐÎÊ½ÉÏ±È½ÏÏÂ */
         if ((st1.st_dev     != st2.st_dev) || \
             (st1.st_ino     != st2.st_ino) || \
             (st1.st_mode    != st2.st_mode) || \
@@ -139,7 +139,7 @@ static int32_t compare_files(fnode_t *fnode)        /* æ–‡ä»¶ååŒ…æ‹¬è·¯å¾„ */
             (st1.st_mtime   != st2.st_mtime)) {
             fnode->result = D_SMALL;
 
-            /* æ–‡ä»¶å¤§å°æœ‰å·®å¼‚åˆ™å†…å®¹å¿…æœ‰å·®å¼‚ï¼Œç›´æŽ¥è¿”å›ž */
+            /* ÎÄ¼þ´óÐ¡ÓÐ²îÒìÔòÄÚÈÝ±ØÓÐ²îÒì£¬Ö±½Ó·µ»Ø */
             if (st1.st_size != st2.st_size) {
                 fnode->result = D_GREAT;
                 return ERROR_NONE;
@@ -157,9 +157,12 @@ static int32_t compare_files(fnode_t *fnode)        /* æ–‡ä»¶ååŒ…æ‹¬è·¯å¾„ */
                     if(ret == fread(buffer2, 1, BUFF_SIZE, f2)) {
                         if(memcmp(buffer1, buffer2, ret)) {
                             fnode->result = D_GREAT;
-                            fclose(f1);
-                            fclose(f2);
-
+                            rv = fclose(f1);
+                            rv |= fclose(f2);
+                            if (rv != 0) {
+                                printf("close file fail\n");
+                                return ERROR_FAIL;
+                            }
                             return ERROR_NONE;
                         } else {
                             continue;
@@ -194,7 +197,7 @@ static int32_t compare_files(fnode_t *fnode)        /* æ–‡ä»¶ååŒ…æ‹¬è·¯å¾„ */
             (st1.st_mtime   != st2.st_mtime)) {
             fnode->result = D_SMALL;
 
-            /* æ–‡ä»¶å¤§å°æœ‰å·®å¼‚åˆ™å†…å®¹å¿…æœ‰å·®å¼‚ï¼Œç›´æŽ¥è¿”å›ž */
+            /* ÎÄ¼þ´óÐ¡ÓÐ²îÒìÔòÄÚÈÝ±ØÓÐ²îÒì£¬Ö±½Ó·µ»Ø */
             if (st1.st_size != st2.st_size) {
                 fnode->result = D_GREAT;
                 return ERROR_NONE;
@@ -208,7 +211,7 @@ static int32_t compare_files(fnode_t *fnode)        /* æ–‡ä»¶ååŒ…æ‹¬è·¯å¾„ */
             }
         }
     } else if ((st1.st_mode & S_IFMT) == S_IFDIR) {
-        /* dir,èµ°ä¸åˆ°è¿™ä¸ªé€»è¾‘ */
+        /* dir,×ß²»µ½Õâ¸öÂß¼­ */
     } else {
         /* unknown type, ignoring these files */
     }
@@ -225,20 +228,20 @@ static int32_t compare_ftree(char *ftree1, char *ftree2, fnode_t *lnode)
     char *f2_path;
     int32_t lresult;
 
-    /* ftreeæ˜¯æ ¹ç›®å½•è·¯å¾„ï¼Œé€šè¿‡å®ƒå’Œæ–‡ä»¶åè¿›è¡Œsprintfå¾—åˆ°æ–‡ä»¶è·¯å¾„ */
+    /* ftreeÊÇ¸ùÄ¿Â¼Â·¾¶£¬Í¨¹ýËüºÍÎÄ¼þÃû½øÐÐsprintfµÃµ½ÎÄ¼þÂ·¾¶ */
     dir1 = opendir(ftree1);
     dir2 = opendir(ftree2);
     if (dir1 == NULL) {
         printf("fail to opendir, dir1:%s\n", ftree1);
         return ERROR_FAIL;
     }
-    /* æ‰“ä¸å¼€è®¤ä¸ºæ— å¯¹åº” */
+    /* ´ò²»¿ªÈÏÎªÎÞ¶ÔÓ¦ */
     if (dir2 == NULL) {
         lnode->result = D_NONE;
         return ERROR_NONE;
     }
 
-    /* éåŽ†è·¯å¾„ä¸‹çš„æ‰€æœ‰æ–‡ä»¶ */
+    /* ±éÀúÂ·¾¶ÏÂµÄËùÓÐÎÄ¼þ */
     pbro_tail = NULL;
     lresult = lnode->result;
     while ((ptr1 = readdir(dir1)) != NULL) {
@@ -257,7 +260,7 @@ static int32_t compare_ftree(char *ftree1, char *ftree2, fnode_t *lnode)
             fnode->pnode = lnode;
             fnode->son   = NULL;
             compare_files(fnode);
-            /* æš‚å­˜æœ¬å±‚æ–‡ä»¶å¯¹æ¯”æƒ…å†µï¼Œè‹¥æœ‰æœ¬è´¨å·®å¼‚åˆ™æœ€åŽä¸Šå±‚ç›®å½•æ–‡ä»¶ä¹Ÿä¸ºæœ¬è´¨å·®å¼‚ */
+            /* ÔÝ´æ±¾²ãÎÄ¼þ¶Ô±ÈÇé¿ö£¬ÈôÓÐ±¾ÖÊ²îÒìÔò×îºóÉÏ²ãÄ¿Â¼ÎÄ¼þÒ²Îª±¾ÖÊ²îÒì */
             if ((lresult != D_GREAT) && (fnode->result != D_SMALL)) {
                 lresult = D_GREAT;
             }
@@ -266,7 +269,7 @@ static int32_t compare_ftree(char *ftree1, char *ftree2, fnode_t *lnode)
             } else {
                 pbro_tail->bro = fnode;
             } 
-            pbro_tail = fnode;  /* æ–¹ä¾¿ä¹‹åŽçš„å…„å¼Ÿç»“ç‚¹é“¾æŽ¥ */
+            pbro_tail = fnode;  /* ·½±ãÖ®ºóµÄÐÖµÜ½áµãÁ´½Ó */
         } else if (ptr1->d_type == DT_DIR) {
             fnode = (fnode_t *)malloc(sizeof(fnode_t));
 
@@ -279,9 +282,9 @@ static int32_t compare_ftree(char *ftree1, char *ftree2, fnode_t *lnode)
             } else {
                 pbro_tail->bro = fnode;
             }
-            pbro_tail = fnode;  /* æ–¹ä¾¿å…„å¼Ÿç»“ç‚¹é“¾æŽ¥ */
+            pbro_tail = fnode;  /* ·½±ãÐÖµÜ½áµãÁ´½Ó */
 
-            /* ftree2çš„åå­—å¯èƒ½å¾ˆé•¿æˆ–å¾ˆçŸ­ï¼Œè€Œfnode->nameä¸ä¸€å®šæœ‰è¿™ä¹ˆé•¿,æž„é€ ftree2ä¸‹çš„ç»“ç‚¹è·¯å¾„ */
+            /* ftree2µÄÃû×Ö¿ÉÄÜºÜ³¤»òºÜ¶Ì£¬¶øfnode->name²»Ò»¶¨ÓÐÕâÃ´³¤,¹¹Ôìftree2ÏÂµÄ½áµãÂ·¾¶ */
             f2_path = (char *)malloc(g_dir2_len - g_dir1_len + strlen(fnode->name)+1);
             sprintf(f2_path, "%s/%s", g_dir2, (fnode->name) + g_dir1_len + 1);
 
@@ -334,9 +337,9 @@ static void output_tree(fnode_t *root, op_e op)
         printf("%s%s", table, fname);
         printf("%s\n", g_result[tmp->result]);
 
-    /* è‹¥åªè·³è¿‡æ‰“å°éžæœ¬è´¨å·®å¼‚ç»“ç‚¹é€ æˆä¸€ä¸ªé—®é¢˜ï¼Œå³å®žé™…æœ¬è´¨å·®å¼‚ç»“ç‚¹æœ‰å…„å¼Ÿç»“ç‚¹ï¼Œæ‰“å°å‡ºæ¥çš„æ ‘ä¼šæœ‰å¤šä½™æžæˆä½†çœ‹ä¸åˆ°å…„å¼Ÿç»“ç‚¹ */
+    /* ÈôÖ»Ìø¹ý´òÓ¡·Ç±¾ÖÊ²îÒì½áµãÔì³ÉÒ»¸öÎÊÌâ£¬¼´Êµ¼Ê±¾ÖÊ²îÒì½áµãÓÐÐÖµÜ½áµã£¬´òÓ¡³öÀ´µÄÊ÷»áÓÐ¶àÓàÖ¦è¾µ«¿´²»µ½ÐÖµÜ½áµã */
 skip_print:
-        /* è¯¥é—®é¢˜é€šè¿‡diffé€‰é¡¹ä¸‹è¾“å‡ºcsvæ–‡ä»¶è§„é¿ï¼Œæ­¤æ—¶æ‰€æœ‰ç»“ç‚¹éƒ½ä¸è¿›è¡Œæ‰“å°ï¼Œå¯ç¼©å‡tableçš„æ“ä½œæé«˜æ€§èƒ½ */
+        /* ¸ÃÎÊÌâÍ¨¹ýdiffÑ¡ÏîÏÂÊä³öcsvÎÄ¼þ¹æ±Ü£¬´ËÊ±ËùÓÐ½áµã¶¼²»½øÐÐ´òÓ¡£¬¿ÉËõ¼õtableµÄ²Ù×÷Ìá¸ßÐÔÄÜ */
         if (op == DIFF && tmp->result != D_SMALL) {
             sprintf(csv, "%s,%s\n", tmp->name, g_result[tmp->result]);
             fwrite(csv, 1, strlen(csv), output);
@@ -355,7 +358,8 @@ skip_print:
                 }
             }
             tmp = tmp->son;
-            i+=2;
+            i++;
+            i++;
             continue;
         }
         if (tmp->bro != NULL) {
@@ -363,7 +367,7 @@ skip_print:
             table[i-1] = '-';
             continue;
         }
-        /* è·³åˆ°ä¸‹ä¸€ä¸ªæœ‰å…„å¼Ÿç»“ç‚¹çš„å±‚ */
+        /* Ìøµ½ÏÂÒ»¸öÓÐÐÖµÜ½áµãµÄ²ã */
         while((tmp->bro) == NULL && tmp->pnode != &g_root) {
             table[i] = '-';
             if (i > 1) {
@@ -371,7 +375,8 @@ skip_print:
                 table[i-2] = '-';
             }
             tmp = tmp->pnode;
-            i-=2;
+            i--;
+            i--;
         }
         tmp = tmp->bro;
         table[i-1] = '-';
@@ -418,7 +423,7 @@ int main(int argc, char **argv) {
     g_dir2 = (char *)malloc(g_dir2_len + 1);
     strcpy(g_dir2, argv[2]);
 
-    /* æ ¹ç»“ç‚¹åŽ»ç‰¹æ®ŠåŒ– */
+    /* ¸ù½áµãÈ¥ÌØÊâ»¯ */
     uper = (fnode_t *)malloc(sizeof(fnode_t));
     fnode_init(uper, "..");
     g_root.pnode = uper;

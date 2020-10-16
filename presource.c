@@ -6,10 +6,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define ERROR_NONE  (0)
-#define ERROR_FAIL  (-1)
-#define MAX_LEN     (256)
-#define MAX_PATH    (1024)
+#define ERROR_NONE (0)
+#define ERROR_FAIL (-1)
+#define MAX_LEN    (256)
+#define MAX_PATH   (1024)
 
 typedef struct fnode {
     char name[MAX_LEN];
@@ -59,7 +59,7 @@ static int32_t count_fd(char *pid)
     return fd_cnt;
 }
 
-static void fnode_init(fnode_t *node)
+void fnode_init(fnode_t *node)
 {
     memset(node->name, 0, sizeof(node->name));
     node->fd = 0;
@@ -91,7 +91,7 @@ static void sort_presource(void)
     tail = &head;
     fnode_init(&head);
     /* 创建资源信息链表 */
-    while ((fptr = readdir(dir)) != NULL) {
+    while((fptr = readdir(dir)) != NULL) {
         if (fptr->d_name[0] < '0' || fptr->d_name[0] > '9') {
             continue;
         }
@@ -100,7 +100,7 @@ static void sort_presource(void)
 
         fp = fopen(fpath, "r");
         memset(buff, 0, sizeof(buff));
-        if (fread(buff, 1, MAX_LEN, fp) == 0) {
+        if(fread(buff, 1, MAX_LEN, fp) == 0) {
             printf("kernel process\n");
             break;
         }
@@ -131,10 +131,10 @@ static void sort_presource(void)
     closedir(dir);
 
     /* 按序输出 */
-    while (head.next != NULL) {
+    while(head.next != NULL) {
         tmp = head.next;
         sort_out = tmp;
-        while (tmp != NULL) {
+        while(tmp != NULL) {
             if (!strcmp(input, "-Om")) {
                 if (tmp->rss > sort_out->rss) {
                     sort_out = tmp;
@@ -177,7 +177,7 @@ static void proc_detect(void)
         return;
     }
 
-    while ((fptr = readdir(dir)) != NULL) {
+    while((fptr = readdir(dir)) != NULL) {
         if (fptr->d_name[0] < '0' || fptr->d_name[0] > '9') {
             continue;
         }
@@ -189,7 +189,7 @@ static void proc_detect(void)
 
         fp = fopen(fpath, "r");
         memset(buff, 0, sizeof(buff));
-        if (fread(buff, 1, MAX_LEN, fp) == 0) {
+        if(fread(buff, 1, MAX_LEN, fp) == 0) {
             printf("kernel process\n");
             break;
         }
